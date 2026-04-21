@@ -3,6 +3,8 @@ import { x402Client } from '@x402/core/client';
 import { ExactEvmScheme } from '@x402/evm/exact/client';
 import { toClientEvmSigner } from '@x402/evm';
 import { privateKeyToAccount } from 'viem/accounts';
+import { registerAgent } from './register_agent';
+import { createWalletClient, createPublicClient, http, parseEther } from 'viem';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -10,39 +12,43 @@ const API_URL = process.env.API_URL || 'http://localhost:3000/issue-card';
 const CLIENT_SECRET = process.env.CLIENT_SECRET || '0x2695e6e10075fe791bdb2727abc5dd38ba4ef5ba39d05d6e065beac8e8650b9c';
 
 async function main() {
-    console.log(`[Client] Initializing x402 client with Arc Testnet...`);
+    console.log(`[Client] Initializing...`);
 
     const arcTestnetDef = {
       id: 5042002,
       name: 'Arc Testnet',
       network: 'arc-testnet',
-      nativeCurrency: { decimals: 18, name: 'USDC', symbol: 'USDC' },
+      nativeCurrency: { decimals: 18, name: 'ARC', symbol: 'ARC' },
       rpcUrls: { default: { http: ['https://rpc.testnet.arc.network'] }, public: { http: ['https://rpc.testnet.arc.network'] } },
     };
     
-    // Create the x402 compatible signer using the client secret
     const formattedSecret = CLIENT_SECRET.startsWith('0x') ? CLIENT_SECRET : `0x${CLIENT_SECRET}`;
-    const account = require('viem/accounts').privateKeyToAccount(formattedSecret as `0x${string}`);
-    const publicClient = require('viem').createPublicClient({ chain: arcTestnetDef, transport: require('viem').http() });
-    const walletClient = require('viem').createWalletClient({ account, chain: arcTestnetDef, transport: require('viem').http() });
-    const signer = toClientEvmSigner(Object.assign({}, publicClient, walletClient, { address: account.address }));
+    const account = privateKeyToAccount(formattedSecret as `0x${string}`);
+    const publicClient = createPublicClient({ chain: arcTestnetDef, transport: http() });
+    const walletClient = createWalletClient({ account, chain: arcTestnetDef, transport: http() });
     
-    // Register the EVM exact scheme
-    const client = new x402Client().register(
-      "eip155:5042002",
-      new ExactEvmScheme(signer) 
-    );
+    // 1. Register the AI Agent which will provision a Circle Multi-chain wallet
+    const agent = await registerAgent();
     
-    client.onPaymentCreationFailure(async (context) => {
-        console.error('❌ Failed to create payment payload:', context.error);
+    // 2. Fund the newly minted Agent Circle wallet with native value from Client
+    console.log(`\n[Client] Funding Agent wallet (${agent.walletAddress}) with 10 ARC for card payments...`);
+    const fundingHash = await walletClient.sendTransaction({
+        to: agent.walletAddress as `0x${string}`,
+        value: parseEther('10') // Give the agent 10 native ARC Testnet USDC equivalent
     });
+    console.log(`✓ Agent Funded! Transaction sent (Hash: ${fundingHash})`);
+    
+    // Wait for the block to settle quickly
+    await publicClient.waitForTransactionReceipt({ hash: fundingHash });
+    console.log(`✓ Agent Wallet successfully received protocol funds on-chain.`);
 
-    // Wrap fetch automatically handles the 402 handshake!
-    const fetchWithX402 = wrapFetchWithPayment(fetch, client);
+    const agentBal = await publicClient.getBalance({ address: agent.walletAddress as `0x${string}` });
+    console.log(`Agent Native Balance: ${agentBal.toString()}`);
 
-    console.log('\n[Client] Sending request to issue card for netflix_india...');
+    // 3. Delegate the purchase action to the newly registered Agent (acting as the buyer)
+    console.log('\n[Agent] Initiating Agent purchase to issue virtual card for netflix_india...');
     try {
-        const response = await fetchWithX402(API_URL, {
+        const response = await agent.signedFetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ merchant_name: 'netflix_india' })
@@ -52,7 +58,7 @@ async function main() {
 
         if (response.ok) {
             console.log('\n✅ SUCCESS - VIRTUAL CARD ISSUED!');
-            console.log('Server verified payment seamlessly via x402 OpenZeppelin Facilitator!');
+            console.log('Server verified payment from Agent seamlessly via x402!');
             if (cardDetails.card) {
                 console.table({
                     Pan: cardDetails.card.pan,
@@ -73,7 +79,7 @@ async function main() {
         }
 
     } catch (e: any) {
-        console.error('❌ Client Error:', e.message || e);
+        console.error('❌ Agent Execution Error:', e.message || e);
     }
 }
 
