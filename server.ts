@@ -130,7 +130,7 @@ app.post('/issue-card', express.json(), async (req, res) => {
     const payloadStr = Buffer.from(paymentSignature as string, 'base64').toString('utf8');
     const paymentPayload = JSON.parse(payloadStr);
 
-    const matchingReq = x402Server.findMatchingRequirements(paymentRequiredObj.accepts, paymentPayload as any);
+    const matchingReq = x402Server.findMatchingRequirements(paymentRequiredObj.accepts as any, paymentPayload as any);
     if (!matchingReq) {
       const encoded = Buffer.from(JSON.stringify(paymentRequiredObj)).toString('base64');
       return res.status(402).set('payment-required', encoded).json({ error: "No matching requirement" });
