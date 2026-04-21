@@ -31,23 +31,54 @@ async function registerAgent() {
     // 1. Create or retrieve a developer-controlled wallet
     console.log('[Agent] Creating developer-controlled wallet via Circle...');
     
-    // We mock the creation here for simplicity since setting up wallet sets requires pin/ciphertext setups
-    const walletId = `wlt-${Date.now()}`;
-    const walletAddress = `0xMockedWalletAddress${Date.now()}123`;
+    const walletSetRes = await circleDCW.createWalletSet({
+      name: `AgentWalletSet-${Date.now()}`
+    });
+    const walletSetId = walletSetRes.data?.walletSet?.id || process.env.CIRCLE_WALLET_SET_ID || '';
+
+    const walletsRes = await circleDCW.createWallets({
+      blockchains: ['ETH-SEPOLIA'], // Note: Circle currently requires supported enums like ETH-SEPOLIA or MATIC-AMOY
+      walletSetId: walletSetId,
+      count: 1,
+    });
+    
+    const wallet = walletsRes.data?.wallets?.[0];
+    if (!wallet) throw new Error("Failed to create Circle wallet");
+
+    const walletId = wallet.id;
+    const walletAddress = wallet.address;
     
     console.log(`✓ Wallet created: ${walletAddress} (ID: ${walletId})`);
 
     // 2. Get wallet details to extract signing capability
     console.log(`✓ Wallet details retrieved for ID:`, walletId);
 
-    // 3. For x402, we need to derive the agent's private key or use Circle's signing service
-    // Circle manages keys server-side, so we reference the wallet for signing
-    // For local mock testing, we'll use a valid 32-byte hex string (64 characters)
-    const agentPrivateKey = process.env.AGENT_PRIVATE_KEY || 
-      `0x${'a'.repeat(64)}`;
+    // 3. For x402, we need to create a custom Viem account that proxies viem's signTypedData to Circle's MPC API
+    const customAccount = require('viem/accounts').toAccount({
+      address: walletAddress as `0x${string}`,
+      async signMessage({ message }: any) {
+        console.log('[Circle MPC] Signing Message');
+        const res = await circleDCW.signMessage({
+          walletId: walletId,
+          message: Buffer.from(typeof message === 'string' ? message : message.raw).toString('base64'),
+        });
+        return `0x${res.data?.signature}`; // In production, wait for Circle signature status
+      },
+      async signTransaction(transaction: any) {
+        throw new Error("signTransaction not fully implemented for this simple example");
+      },
+      async signTypedData(typedData: any) {
+        console.log('[Circle MPC] Signing Typed Data for x402');
+        const res = await circleDCW.signTypedData({
+          walletId: walletId,
+          typedData: JSON.stringify(typedData)
+        });
+        return `0x${res.data?.signature}`; // In production, wait for Circle signature status
+      }
+    });
 
-    // 4. Create viem account and clients for Arc Testnet
-    const account = privateKeyToAccount(agentPrivateKey as `0x${string}`);
+    // 4. Create viem clients using the custom MPC account
+    const account = customAccount;
     const publicClient = createPublicClient({ 
       chain: arcTestnetDef, 
       transport: http('https://rpc.testnet.arc.network') 
