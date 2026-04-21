@@ -4,7 +4,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 import fetch from "node-fetch";
 
 // Base URL for your deployed PayPer Card API
-const API_BASE = "https://agc.rizzmo.site/api";
+const API_BASE = process.env.API_BASE_URL || 'http://localhost:3000/api';
 
 const server = new Server(
   {

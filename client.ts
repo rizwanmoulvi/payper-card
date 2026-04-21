@@ -6,7 +6,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const API_URL = process.env.API_URL || 'https://agc.rizzmo.site/issue-card';
+const API_URL = process.env.API_URL || 'http://localhost:3000/issue-card';
 const CLIENT_SECRET = process.env.CLIENT_SECRET || '0x2695e6e10075fe791bdb2727abc5dd38ba4ef5ba39d05d6e065beac8e8650b9c';
 
 async function main() {
