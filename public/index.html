@@ -130,7 +130,7 @@
                     <div class="text-3xl font-black text-x402green">03</div>
                     <h3 class="text-2xl font-bold tracking-tight">Virtual Cards</h3>
                     <p class="text-gray-800 leading-relaxed">
-                        Once the cryptic signature confirms on-chain execution via our custom Arc Facilitator, the system issues a single-use Lithic card mapped exactly to the agent's invoice limit.
+                        Once the cryptic signature confirms on-chain execution via our custom Arc Facilitator, the system issues a single-use Visa card mapped exactly to the agent's invoice limit.
                     </p>
                 </div>
             </div>
@@ -185,15 +185,15 @@
     <!-- Typewriter Script -->
     <script>
         const conversation = [
-            { sender: "User", text: "Hey Agent, my Hetzner cloud bill is due for $15. Can you pay it?", color: "text-black font-bold" },
-            { sender: "Agent", text: "Checking local wallet state. Found sufficient Circle MPC funds.", color: "text-x402" },
-            { sender: "Agent", text: "> POST /issue-card { merchant: 'Hetzner', amount: 15.00 }", color: "text-gray-500" },
-            { sender: "Server", text: "HTTP 402 Payment Required: Please sign EIP-3009 transfer authorization for 15.15 Native USDC via Arc Testnet.", color: "text-x402orange" },
+            { sender: "Agent", text: "Your favourite book dropped on the book site. Do you want me to buy it?", color: "text-black font-bold" },
+            { sender: "User", text: "Yes, I would love to. But does the store accept USDC?", color: "text-x402" },
+            { sender: "Agent", text: "No worries, I got PayPer Card.", color: "text-black font-bold" },
+            { sender: "Agent", text: "> POST /issue-card { merchant: 'Book Store', amount: 24.99 }", color: "text-gray-500" },
+            { sender: "Server", text: "HTTP 402 Payment Required: Please sign EIP-3009 transfer authorization for 25.24 Native USDC via Arc Testnet.", color: "text-x402orange" },
             { sender: "Agent", text: "Signing Evm Exact Payment Challenge via Circle MPC...", color: "text-x402" },
             { sender: "Server", text: "Receiving signature. Validated via Custom Facilitator. Retrying fetch...", color: "text-gray-500" },
-            { sender: "Server", text: "HTTP 200 OK: Virtual Card Issued.", color: "text-x402green" },
-            { sender: "Agent", text: "Got the card! (PAN: 4111 **** **** 2094). Entering into Hetzner billing portal.", color: "text-x402 font-bold" },
-            { sender: "User", text: "Awesome. Close the card when you're done.", color: "text-black font-bold" }
+            { sender: "Server", text: "HTTP 200 OK: Virtual Visa Issued.", color: "text-x402green" },
+            { sender: "Agent", text: "Got the card! (PAN: 4111 **** **** 2094). Entering into store billing portal.", color: "text-x402 font-bold" },
         ];
 
         const container = document.getElementById("typewriter-container");
