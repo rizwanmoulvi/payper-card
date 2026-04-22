@@ -6,12 +6,7 @@ import { paymentMiddleware, x402ResourceServer } from '@x402/express';
 import { ExactEvmScheme } from '@x402/evm/exact/server';
 import { HTTPFacilitatorClient } from '@x402/core/server';
 
-
-
-
-
-
-// Polyfill-like or let's import the client dependencies
+// Client dependencies
 import { wrapFetchWithPayment } from '@x402/fetch';
 import { x402Client } from '@x402/core/client';
 import { ExactEvmScheme as ClientExactEvmScheme } from '@x402/evm/exact/client';
@@ -38,59 +33,19 @@ const lithic = new Lithic({
   environment: 'sandbox',
 });
 
-// Create a Local Facilitator for Arc Testnet
-const localFacilitatorClient = new x402Facilitator();
-const serverAccount = privateKeyToAccount((process.env.SERVER_SECRET_KEY || process.env.CLIENT_SECRET || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80') as `0x${string}`);
+// Connect to the Independent Hosted x402 Facilitator
+const HTTP_FACILITATOR_URL = process.env.FACILITATOR_URL || 'https://arc-testnet-x402-facilitator.onrender.com';
+const HTTP_FACILITATOR_API_KEY = process.env.FACILITATOR_API_KEY || '21d44887-28ed-43ab-abce-c2352fd24ad0'; 
 
-const { arcTestnet } = require('viem/chains'); // if available, or just define it
-const arcTestnetDef = {
-  id: 5042002,
-  name: 'Arc Testnet',
-  network: 'arc-testnet',
-  nativeCurrency: { decimals: 6, name: 'USDC', symbol: 'USDC' },
-  rpcUrls: { default: { http: ['https://rpc.testnet.arc.network'] }, public: { http: ['https://rpc.testnet.arc.network'] } },
-};
-
-const publicClient = createPublicClient({ chain: arcTestnetDef, transport: http() });
-const walletClient = createWalletClient({ account: serverAccount, chain: arcTestnetDef, transport: http() });
-const facilitatorSigner = toFacilitatorEvmSigner(Object.assign({}, publicClient, walletClient, { address: serverAccount.address }));
-
-// @ts-ignore
-registerExactEvmScheme(localFacilitatorClient, {
-  signer: facilitatorSigner,
-  networks: "eip155:5042002"
+const hostedFacilitatorClient = new HTTPFacilitatorClient({
+  url: HTTP_FACILITATOR_URL,
+  createAuthHeaders: async () => {
+    const headers = { Authorization: `Bearer ${HTTP_FACILITATOR_API_KEY}` };
+    return { verify: headers, settle: headers, supported: headers };
+  }
 });
 
-const localFacilitatorAsync = {
-  verify: async (payload: any, req: any) => {
-    console.log("Mock verify called with payload:", payload);
-    return {
-      isValid: true,
-      payer: payload.payload.authorization.from
-    };
-  },
-  settle: async (payload: any, req: any) => {
-    console.log("Mock settle called with payload:", payload);
-    return {
-      success: true,
-      transactionId: "0xdeadbeef1234567890abcdef1234567890abcdef",
-    };
-  },
-  supported: async () => ({
-    kinds: [{ x402Version: 2, scheme: "exact", network: "eip155:5042002" }],
-    extensions: [],
-    signers: { "eip155:5042002": [SERVER_PUBLIC_KEY] }
-  }),
-  getSupported: async () => ({
-    kinds: [{ x402Version: 2, scheme: "exact", network: "eip155:5042002" }],
-    extensions: [],
-    signers: { "eip155:5042002": [SERVER_PUBLIC_KEY] }
-  })
-};
-
-// Register EVM Scheme for Arc Testnet using the Local Facilitator
-// @ts-ignore
-const x402Server = new x402ResourceServer(localFacilitatorClient).register(
+const x402Server = new x402ResourceServer(hostedFacilitatorClient).register(
   "eip155:5042002",
   new ExactEvmScheme()
 );
