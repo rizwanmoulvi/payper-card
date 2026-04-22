@@ -1,15 +1,32 @@
 # PayPer Card: Autonomous AI Agent Checkout
 
-**PayPer Card** is an open-source application that bridges pure blockchain abstraction with the real-world fiat economy. It empowers autonomous AI agents to immediately provision fully-funded Lithic virtual credit cards to finish checkouts for users asynchronously.
+**PayPer Card** is an open-source application that bridges pure blockchain abstraction with the real-world fiat economy. It empowers autonomous AI agents to immediately provision fully-funded Visa virtual credit cards to finish checkouts for users asynchronously.
 
-To process the underlying cryptocurrency payments securely and seamlessly, PayPer Card integrates with our **Hosted x402 Facilitator Service** (available in the `facilitator` branch).
+To process the underlying cryptocurrency payments securely and seamlessly, PayPer Card integrates with our **Hosted x402 Facilitator Service** (available in the [x402 Facilitator Repository](https://github.com/rizwanmoulvi/arc-testnet-x402-facilitator)).
 
 ## How It Works
 
 1.  **AI Invocation:** An AI agent attempts to hit our protected `/issue-card` endpoint to buy a virtual card for a user's subscription or e-commerce cart.
 2.  **x402 Challenge:** The PayPer Card server rejects the request with a `402 Payment Required` challenge, demanding a specific USD amount (plus fee) via Arc Testnet USDC.
 3.  **On-Chain Settlement (via Facilitator):** The agent automatically fulfills this challenge utilizing our custom **Hosted x402 Facilitator**. The facilitator handles the blockchain infrastructure, verifies the Arc Testnet Native USDC transaction, and guarantees settlement.
-4.  **Card Provisioning:** Once the facilitator confirms the mathematical receipt on-chain, PayPer Card instantly provisions a funded, single-use **Lithic** Virtual Visa/Mastercard and returns the PAN/CVV directly to the agent.
+4.  **Card Provisioning:** Once the facilitator confirms the mathematical receipt on-chain, PayPer Card instantly provisions a funded, single-use Virtual Visa card and returns the PAN/CVV directly to the agent.
+
+```mermaid
+sequenceDiagram
+    participant Agent as AI Agent
+    participant PayPerCard as PayPer Card
+    participant Facilitator as x402 Facilitator
+    participant Blockchain as Arc Testnet
+    
+    Agent->>PayPerCard: Request Virtual Visa (POST /issue-card)
+    PayPerCard-->>Agent: 402 Payment Required (Price Challenge)
+    Agent->>Facilitator: Pay Challenge Request (Sign TX)
+    Facilitator->>Blockchain: Execute & Settle USDC
+    Facilitator-->>Agent: Settlement Receipt
+    Agent->>PayPerCard: Resubmit request + Receipt
+    PayPerCard->>PayPerCard: Verify Receipt
+    PayPerCard-->>Agent: 200 OK (Visa PAN, CVV, Exp)
+```
 
 ---
 
@@ -17,7 +34,7 @@ To process the underlying cryptocurrency payments securely and seamlessly, PayPe
 
 This application relies on our **Custom x402 Facilitator**, which handles the heavy lifting of blockchain infrastructure, transaction simulation, and high-performance settlement natively on the Arc EVM. 
 
-For detailed documentation regarding the Facilitator's architecture, hosted endpoints, authentication, and pricing models, please see the `facilitator` branch of this repository.
+For detailed documentation regarding the Facilitator's architecture, hosted endpoints, authentication, and pricing models, please see the [x402 Facilitator Repository](https://github.com/rizwanmoulvi/arc-testnet-x402-facilitator).
 
 ---
 
