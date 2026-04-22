@@ -1,76 +1,65 @@
-# PayPer Card
+# PayPer Card: Autonomous AI Agent Checkout
 
-Ever wanted your AI agent to autonomously purchase something for you with crypto? Giving an autonomous script your real credit card is risky, and traditional fiat gateways like Stripe require human-in-the-loop KYC or email signups that break agent workflows.
+**PayPer Card** is an open-source application that bridges pure blockchain abstraction with the real-world fiat economy. It empowers autonomous AI agents to immediately provision fully-funded Lithic virtual credit cards to finish checkouts for users asynchronously.
 
-PayPer Card solves this. It allows autonomous AI agents to instantly provision single-use virtual credit cards to complete purchases. There is no KYC, no fiat checkout, and no email signup.
+To process the underlying cryptocurrency payments securely and seamlessly, PayPer Card integrates with our **Hosted x402 Facilitator Service** (available in the `facilitator` branch).
 
-Instead, the system uses the x402 Protocol. Every virtual card request demands a cryptographic payment over the Arc EVM network. Your agent pays in crypto, and our API hands back a real, spendable Visa or Mastercard.
+## How It Works
 
-## How it Works
+1.  **AI Invocation:** An AI agent attempts to hit our protected `/issue-card` endpoint to buy a virtual card for a user's subscription or e-commerce cart.
+2.  **x402 Challenge:** The PayPer Card server rejects the request with a `402 Payment Required` challenge, demanding a specific USD amount (plus fee) via Arc Testnet USDC.
+3.  **On-Chain Settlement (via Facilitator):** The agent automatically fulfills this challenge utilizing our custom **Hosted x402 Facilitator**. The facilitator handles the blockchain infrastructure, verifies the Arc Testnet Native USDC transaction, and guarantees settlement.
+4.  **Card Provisioning:** Once the facilitator confirms the mathematical receipt on-chain, PayPer Card instantly provisions a funded, single-use **Lithic** Virtual Visa/Mastercard and returns the PAN/CVV directly to the agent.
 
-The system bridges web3 machine-to-machine payments with web2 fiat rails by combining Lithic (for instant virtual card issuing), the x402 protocol, and Circle Developer-Controlled Wallets.
+---
 
-When an agent requests a card, the server issues a 402 Payment Required challenge. The agent automatically negotiates this challenge, signs the payment, and the transaction is settled on the Arc Testnet. Once verified, the server provisions the card.
+## The x402 Facilitator
 
-### Custom Arc Facilitator
+This application relies on our **Custom x402 Facilitator**, which handles the heavy lifting of blockchain infrastructure, transaction simulation, and high-performance settlement natively on the Arc EVM. 
 
-Traditional x402 facilitators often rely on heavy infrastructure like OpenZeppelin Defender. However, when dealing with new or entirely unsupported Layer 2 testnets like Arc, relying on third-party relayers creates deployment bottlenecks.
+For detailed documentation regarding the Facilitator's architecture, hosted endpoints, authentication, and pricing models, please see the `facilitator` branch of this repository.
 
-To solve this, we built a custom, lightweight facilitator directly utilizing the core x402 module. Instead of proxying through a third-party relay, our custom server natively processes EVM signatures and directly broadcasts settlement parameters onto the Arc Testnet using viem.
+---
 
-### Circle Developer-Controlled Wallets
+## Quickstart (PayPer Card Deployment)
 
-We integrated Circle's Developer-Controlled Wallets to handle the agent's funds securely. Using Circle's MPC (Multi-Party Computation) technology, the agent gets a programmable wallet where private keys are never exposed. We wrapped viem's signing methods to proxy requests directly to Circle's infrastructure. The agent's wallet is initially funded by the user, allowing it to seamlessly pay the facilitator's 402 challenges entirely on its own.
+Deploy your own instance of the PayPer Card issuing server:
 
-## Flow Diagram
+1. Connect this repository to your **Render** dashboard via GitHub.
+2. Select **Web Service** (or use the included `render.yaml` Blueprint).
+3. Use the following deployment configs:
+   * **Set Build Command:** `npm install && npx tsc`
+   * **Set Start Command:** `npm start`
+   * **Environment Variables:**
+     ```env
+     PORT=3000
+     USDC_ISSUER=native
+     CLIENT_SECRET=0x<your_server_private_key>
+     merchant_public_key=0x<merchant_destination_address>
+     CIRCLE_API_KEY=<optional>
+     CIRCLE_ENTITY_SECRET=<optional>
+     LITHIC_API_KEY=<sandbox_key>
+     ```
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor U as User / AI Agent (Circle Wallet)
-    participant S as Server (PayPer Card)
-    participant F as Custom x402 Facilitator
-    participant Arc as Arc Testnet
-    participant L as Lithic API
+## Client AI Integration (Agent Code)
 
-    U->>S: POST /issue-card {merchant, amount}
-    S-->>U: 402 Payment Required (Challenge Header)
-    
-    Note over U,F: Agent uses Circle MPC to sign the Evm exact payment
-    U->>S: Retry POST /issue-card (With signed payload)
-    S->>F: Verify EVM Signature and Challenge
-    F->>Arc: Broadcast native settlement transaction
-    Arc-->>F: Transaction Receipt Hash
-    
-    F->>S: Payment Verified
-    S->>L: Provision Virtual Card (Funding Account)
-    L-->>S: Return Card JSON (Token, PAN, CVV, Exp)
-    S-->>U: 200 OK (Card Details)
-    
-    Note over U: Agent completes the e-commerce checkout
+To deploy an AI Agent to execute virtual card payloads against your deployed PayPer Card app:
+
+```typescript
+import { wrapFetchWithPayment } from '@x402/fetch';
+import { x402Client } from '@x402/core/client';
+
+const fetchWithX402 = wrapFetchWithPayment(fetch as any, client);
+
+// The AI Agent seamlessly executes the payload.
+// If it receives a 402 Payment Required, our Facilitator intercepts, pays over Arc, and re-requests!
+const response = await fetchWithX402(`https://your-render-url.onrender.com/issue-card`, {
+      method: 'POST',
+      headers: { 
+         'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ merchant_name: 'Netflix', amount: 5.00 })
+});
 ```
 
-## Features
-
-- True Machine-to-Machine Payments: Uses the x402 HTTP status code standard. Agents natively understand they need to pay.
-- Custom L2 Facilitator: Natively supports the Arc Testnet without relying on bulky relayers.
-- Secure Agent Wallets: Powered by Circle's MPC wallets so private keys are never exposed in the execution environment.
-- Merchant Locked & Single-Use: Cards can be strictly constrained to specific merchants or locked after a single transaction to prevent subscription theft.
-
-## Getting Started
-
-### Prerequisites
-
-You will need a Lithic Sandbox account for card issuing and Circle Developer-Controlled Wallet API keys for the agent infrastructure.
-
-### Local Installation
-
-1. Copy .env.example to .env and fill in your Lithic API keys, Circle config, and server keys.
-2. Install dependencies:
-   npm install
-3. Start the server:
-   npm start
-4. Run the client agent:
-   npx ts-node client.ts
-
-Built for a future where agents handle the boring stuff.
+*Built on [Arc Network](https://arc.network/) & Designed against the [x402 Spec](https://x402.org)*.

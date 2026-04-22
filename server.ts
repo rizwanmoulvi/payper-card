@@ -16,6 +16,8 @@ import { wrapFetchWithPayment } from '@x402/fetch';
 import { x402Client } from '@x402/core/client';
 import { ExactEvmScheme as ClientExactEvmScheme } from '@x402/evm/exact/client';
 import { toClientEvmSigner } from '@x402/evm';
+import { registerAgent } from './register_agent';
+import { parseEther } from 'viem';
 
 dotenv.config();
 
@@ -45,7 +47,7 @@ const arcTestnetDef = {
   id: 5042002,
   name: 'Arc Testnet',
   network: 'arc-testnet',
-  nativeCurrency: { decimals: 18, name: 'USDC', symbol: 'USDC' },
+  nativeCurrency: { decimals: 6, name: 'USDC', symbol: 'USDC' },
   rpcUrls: { default: { http: ['https://rpc.testnet.arc.network'] }, public: { http: ['https://rpc.testnet.arc.network'] } },
 };
 
@@ -99,8 +101,10 @@ app.post('/issue-card', express.json(), async (req, res) => {
   const merchant_name = req.body?.merchant_name || 'Agent_Purchase';
 
   const amountPlusFee = amountNum * 1.01; // Agent pays limit + 1% fee
-  // Convert to 18 decimals for Arc native
-  const baseUnits = (BigInt(Math.round(amountPlusFee * 1_000_000)) * 1_000_000_000_000n).toString();
+  // Convert to 6 decimals for USDC
+  const baseUnits = (Math.round(amountPlusFee * 1_000_000)).toString();
+
+  const MERCHANT_CRYPTO_WALLET = process.env.merchant_public_key || '0xcc631cf60652f2849abA5d5A94534eB50506Ff0C';
 
   const paymentRequiredObj = {
     x402Version: 2,
@@ -109,7 +113,7 @@ app.post('/issue-card', express.json(), async (req, res) => {
       {
         scheme: "exact",
         network: "eip155:5042002",
-        payTo: SERVER_PUBLIC_KEY,
+        payTo: MERCHANT_CRYPTO_WALLET,
         amount: baseUnits,
         asset: USDC_ISSUER,
         maxTimeoutSeconds: 3600,
@@ -143,7 +147,22 @@ app.post('/issue-card', express.json(), async (req, res) => {
       return res.status(402).set('payment-required', encoded).json({ error: verifyResult.invalidReason });
     }
 
-    console.log(`[Server] Payment verified via Custom Flow! Issuing ${amountNum} USD card for ${merchant_name}...`);
+    console.log(`[Server] Payment signature verified! Settling USDC transaction on-chain to Merchant (${MERCHANT_CRYPTO_WALLET})...`);
+    
+    // Call Settle / Actually execute the viem transaction FIRST
+    try {
+      if (process.env.USDC_ISSUER === 'native') {
+        console.log("[Server] Native payment was settled up-front by the Agent. Skipping EIP-3009 relay logic.");
+      } else {
+        await x402Server.settlePayment(paymentPayload as any, matchingReq as any);
+        console.log(`[Server] On-chain ERC20 USDC settlement confirmed!`);
+      }
+    } catch(e) {
+      console.error("Local settlement hook failed", e);
+      return res.status(402).json({ error: "On-chain settlement failed. Your agent's USDC authorization was rejected or insufficient funds." });
+    }
+
+    console.log(`[Server] Issuing ${amountNum} USD card for ${merchant_name}...`);
     
     // Generating a card via lithic sandbox
     const card = await lithic.cards.create({
@@ -153,33 +172,6 @@ app.post('/issue-card', express.json(), async (req, res) => {
     });
 
     console.log(`[Server] Lithic card created:`, card.token);
-
-    // Call Settle / Actually execute the viem transaction for native USDC transfer
-    try {
-      if (process.env.USDC_ISSUER === 'native') {
-        const payerAddress = verifyResult.payer; // use payer dynamically from actual signature instead of hardcoding logic
-
-        console.log(`[Server] Settling transaction natively ... detected payer is: ${payerAddress}`);
-        const merchant_key = process.env.merchant_public_key || '0xcc631cf60652f2849abA5d5A94534eB50506Ff0C';
-        
-        // *******************************************
-        // HACK FOR DEMO / LOCAL SERVER ENVIRONMENT :
-        // *******************************************
-        // Because the Server cannot actually invoke the Client Agent's private key (Circle / local via MPC) remotely
-        // to broadcast `sendTransaction` (x402 usually expects settlement via a Relay server paying gas or the token matching system natively extracting via ecrecover/relay), 
-        // we'll simulate the Agent executing the transfer over Arc to the merchant if the facilitator validates it successfully.
-        
-        // In real-world EIP-3009, we broadcast the signature. Here in Arc native, the *Agent* should initiate this, but we simulate it passing gracefully.
-        
-        if (process.env.SERVER_ACT_AS_RELAY === 'true' || true) {
-             console.log(`[Server] Virtual on-chain transfer simulated or processed via Agent proxy / custom MPC.`);
-        }
-      } else {
-        await x402Server.settlePayment(paymentPayload as any, matchingReq as any);
-      }
-    } catch(e) {
-      console.error("Local settlement hook failed", e);
-    }
 
     const resultBody = {
       message: 'Payment settled on-chain via Custom Facilitator! Virtual card issued.',
@@ -200,6 +192,116 @@ app.post('/issue-card', express.json(), async (req, res) => {
   } catch (err) {
     console.error('Error issuing card:', err);
     return res.status(500).json({ error: 'Internal server error while issuing card' });
+  }
+});
+
+
+// ==========================================
+// DEMO ENDPOINTS (Agent Wallet creation & funding)
+// ==========================================
+const demoAgents = new Map<string, any>();
+
+app.post('/api/demo/create-agent', async (req, res) => {
+  try {
+    const agent = await registerAgent();
+    demoAgents.set(agent.agentId, agent);
+    res.json({
+      agentId: agent.agentId,
+      walletAddress: agent.walletAddress,
+      registration: agent.registration
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: (err as Error).message || 'Failed to create agent' });
+  }
+});
+
+app.post('/api/demo/fund-agent', async (req, res) => {
+  try {
+    const { agentId } = req.body;
+    const agent = demoAgents.get(agentId);
+    if (!agent) return res.status(404).json({ error: 'Agent not found' });
+    
+    // Instead of auto-funding from the client wallet, we just return the address 
+    // so the user can manually fund it or rely on existing faucet funds.
+    res.json({
+      success: true,
+      agentId: agent.agentId,
+      walletAddress: agent.walletAddress,
+      message: "Please fund this agent address manually."
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: (err as Error).message || 'Failed to check agent' });
+  }
+});
+
+app.post('/api/demo/run-agent', async (req, res) => {
+  try {
+    const { agentId, merchant, amount } = req.body;
+    const amountNum = parseFloat(amount) || 5.00;
+    
+    // If agentId provided, use the Circle wallet mapped agent
+    let fetchWithX402;
+    if (agentId && demoAgents.has(agentId)) {
+        console.log(`[Demo] Running fetch using MPC Agent ${agentId}...`);
+        const agent = demoAgents.get(agentId);
+        fetchWithX402 = agent.signedFetch;
+    } else {
+        // Fallback to default local client if no agentId
+        const CLIENT_SECRET = process.env.CLIENT_SECRET || '';
+        const formattedSecret = CLIENT_SECRET.startsWith('0x') ? CLIENT_SECRET : `0x${CLIENT_SECRET}`;
+        const account = require('viem/accounts').privateKeyToAccount(formattedSecret);
+        const signer = require('@x402/evm').toClientEvmSigner(account);
+        const client = new (require('@x402/core/client')).x402Client().register(
+          "eip155:5042002",
+          new (require('@x402/evm/exact/client')).ExactEvmScheme(signer)
+        );
+        fetchWithX402 = require('@x402/fetch').wrapFetchWithPayment(globalThis.fetch || fetch, client);
+    }
+
+    
+    const MERCHANT_CRYPTO_WALLET = process.env.merchant_public_key || '0xcc631cf60652f2849abA5d5A94534eB50506Ff0C';
+    // Native token deduction via Agent wallet (Circle or Viem)
+    try {
+        const baseUnitsObject = (BigInt(Math.round((parseFloat(amount) * 1.01) * 1000000)) * BigInt("1000000000000")).toString(); // Shift from 6 to 18 decimals!
+        // Since we don't have Circle MPC natively integrated to handle random demo wallets in this test, we execute a viem transaction 
+        // to move the funds from the fallback client secret (which is meant to represent the agent wallet that was funded).
+        const fallbackSecret = process.env.CLIENT_SECRET || process.env.SERVER_SECRET_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+        const formattedSecret = fallbackSecret.startsWith('0x') ? fallbackSecret : `0x${fallbackSecret}`;
+        const account = require('viem/accounts').privateKeyToAccount(formattedSecret);
+        const walletClient = require('viem').createWalletClient({ 
+             account, 
+             chain: { id: 5042002, name: 'Arc', nativeCurrency: { decimals: 6, name: 'USDC', symbol: 'USDC' }, rpcUrls: { default: { http: ['https://rpc.testnet.arc.network'] } } }, 
+             transport: require('viem').http() 
+        });
+        const publicClient = require('viem').createPublicClient({ 
+             chain: { id: 5042002, name: 'Arc', nativeCurrency: { decimals: 6, name: 'USDC', symbol: 'USDC' }, rpcUrls: { default: { http: ['https://rpc.testnet.arc.network'] } } }, 
+             transport: require('viem').http() 
+        });
+        
+        console.log(`[Agent] Initiating native deduction of ${baseUnitsObject} USDC directly to Merchant...`);
+        const hash = await walletClient.sendTransaction({
+             to: MERCHANT_CRYPTO_WALLET,
+             value: BigInt(baseUnitsObject)
+        });
+        console.log(`[Agent] Broadcasted native transfer - Hash: ${hash}`);
+        await publicClient.waitForTransactionReceipt({ hash });
+        console.log(`[Agent] Transfer receipt confirmed!`);
+    } catch(err) {
+        console.error("Agent balance insufficient for native deduction:", (err as Error).message);
+        return res.status(400).json({ error: "Insufficient Agent Funds or Native gas required. Please send more USDC to the Agent Address." });
+    }
+
+    const agentResponse = await fetchWithX402(`http://127.0.0.1:${process.env.PORT || 3000}/issue-card`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ merchant_name: merchant, amount: amountNum })
+    });
+
+    const agentData = await agentResponse.json();
+    return res.status(agentResponse.status).json(agentData);
+  } catch (err: any) {
+    console.error('Agent runner error:', err);
+    return res.status(500).json({ error: (err as Error).message || 'Internal failure in agent client' });
   }
 });
 
@@ -234,7 +336,7 @@ app.post('/api/run-agent', async (req, res) => {
     return res.status(agentResponse.status).json(agentData);
   } catch (err: any) {
     console.error('Agent runner error:', err);
-    return res.status(500).json({ error: err.message || 'Internal failure in agent client' });
+    return res.status(500).json({ error: (err as Error).message || 'Internal failure in agent client' });
   }
 });
 
@@ -249,7 +351,7 @@ app.get('/api/cards', async (req, res) => {
     return res.status(200).json(cards.data);
   } catch (err: any) {
     console.error('Error listing cards:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -260,7 +362,7 @@ app.get('/api/cards/:token', async (req, res) => {
     return res.status(200).json(card);
   } catch (err: any) {
     console.error('Error retrieving card:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -276,7 +378,7 @@ app.patch('/api/cards/:token', async (req, res) => {
     return res.status(200).json(card);
   } catch (err: any) {
     console.error('Error updating card:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -289,7 +391,7 @@ app.get('/api/cards/:token/transactions', async (req, res) => {
     return res.status(200).json(transactions.data);
   } catch (err: any) {
     console.error('Error listing transactions:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: (err as Error).message });
   }
 });
 

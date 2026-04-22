@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: agentpay-facilitator
+    env: node
+    buildCommand: npm install && npx tsc
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: merchant_public_key
+        sync: false
+      - key: USDC_ISSUER
+        value: native
+      - key: CLIENT_SECRET
+        sync: false
+      - key: LITHIC_API_KEY
+        sync: false
