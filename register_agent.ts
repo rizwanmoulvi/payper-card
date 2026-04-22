@@ -95,7 +95,7 @@ async function registerAgent() {
     });
 
     // 5. Create x402 signer from the account
-    const evmSigner = toClientEvmSigner(account, publicClient);
+    const evmSigner = toClientEvmSigner(account, publicClient as any);
 
     // 6. Register the agent with x402 on Arc Testnet
     console.log('[Agent] Registering x402 scheme for Arc Testnet...');
