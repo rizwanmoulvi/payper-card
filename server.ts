@@ -5,11 +5,11 @@ import path from 'path';
 import { paymentMiddleware, x402ResourceServer } from '@x402/express';
 import { ExactEvmScheme } from '@x402/evm/exact/server';
 import { HTTPFacilitatorClient } from '@x402/core/server';
-import { x402Facilitator } from '@x402/core/facilitator';
-import { registerExactEvmScheme } from '@x402/evm/exact/facilitator';
-import { createPublicClient, createWalletClient, http } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
-import { toFacilitatorEvmSigner } from '@x402/evm';
+
+
+
+
+
 
 // Polyfill-like or let's import the client dependencies
 import { wrapFetchWithPayment } from '@x402/fetch';
