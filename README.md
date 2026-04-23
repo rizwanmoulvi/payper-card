@@ -1,6 +1,6 @@
 # PayPer Card: Autonomous AI Agent Checkout
 
-**PayPer Card** is an open-source application that bridges pure blockchain abstraction with the real-world fiat economy. It empowers autonomous AI agents to immediately provision fully-funded Visa virtual credit cards to finish checkouts for users asynchronously.
+**PayPer Card** is an application that bridges pure blockchain abstraction with the real-world fiat economy. It empowers autonomous AI agents to immediately provision fully-funded Visa virtual credit cards to finish checkouts for users asynchronously.
 
 To process the underlying cryptocurrency payments securely and seamlessly, PayPer Card integrates with our **Hosted x402 Facilitator Service** (available in the [x402 Facilitator Repository](https://github.com/rizwanmoulvi/arc-testnet-x402-facilitator)).
 
