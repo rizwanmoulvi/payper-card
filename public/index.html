@@ -185,15 +185,16 @@
     <!-- Typewriter Script -->
     <script>
         const conversation = [
-            { sender: "Agent", text: "Your favourite book dropped on the book site. Do you want me to buy it?", color: "text-black font-bold" },
-            { sender: "User", text: "Yes, I would love to. But does the store accept USDC?", color: "text-x402" },
+            { sender: "Agent", text: "Tomorrowland tickets just dropped. Do want me to buy it?", color: "text-black font-bold" },
+            { sender: "User", text: "Yes, go ahead. But does the platfrom accept USDC?", color: "text-x402" },
             { sender: "Agent", text: "No worries, I got PayPer Card.", color: "text-black font-bold" },
-            { sender: "Agent", text: "> POST /issue-card { merchant: 'Book Store', amount: 24.99 }", color: "text-gray-500" },
+            { sender: "Agent", text: "> POST /issue-card { merchant: 'Tomorrowland', amount: 400 }", color: "text-gray-500" },
             { sender: "Server", text: "HTTP 402 Payment Required: Please sign EIP-3009 transfer authorization for 25.24 Native USDC via Arc Testnet.", color: "text-x402orange" },
             { sender: "Agent", text: "Signing Evm Exact Payment Challenge via Circle MPC...", color: "text-x402" },
             { sender: "Server", text: "Receiving signature. Validated via Custom Facilitator. Retrying fetch...", color: "text-gray-500" },
             { sender: "Server", text: "HTTP 200 OK: Virtual Visa Issued.", color: "text-x402green" },
             { sender: "Agent", text: "Got the card! (PAN: 4111 **** **** 2094). Entering into store billing portal.", color: "text-x402 font-bold" },
+            { sender: "Agent", text: "Pack your bags, I got your tickets.", color: "text-green font-bold" },
         ];
 
         const container = document.getElementById("typewriter-container");

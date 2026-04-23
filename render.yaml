@@ -12,7 +12,7 @@ services:
       - key: merchant_public_key
         sync: false
       - key: USDC_ISSUER
-        value: native
+        value: 0x3600000000000000000000000000000000000000
       - key: CLIENT_SECRET
         sync: false
       - key: LITHIC_API_KEY

@@ -24,8 +24,8 @@ app.get('/demo', (req, res) => res.sendFile(path.join(__dirname, 'public', 'demo
 
 const PORT = process.env.PORT || 3000;
 const SERVER_PUBLIC_KEY = process.env.SERVER_PUBLIC_KEY || '0x217d848DE8b671aFEF2f0dCb9E72879fb109C483';
-// USDC on Arc Testnet (18 decimals native token)
-const USDC_ISSUER = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
+// Arc testnet USDC ERC-20 interface for x402 permit-based settlement (6 decimals)
+const USDC_ISSUER = process.env.USDC_ISSUER || '0x3600000000000000000000000000000000000000';
 
 // Lithic Config (Sandbox)
 const lithic = new Lithic({
@@ -73,8 +73,8 @@ app.post('/issue-card', express.json(), async (req, res) => {
         asset: USDC_ISSUER,
         maxTimeoutSeconds: 3600,
         extra: {
-          name: "NativeUSDC",
-          version: "1"
+          name: "USDC",
+          version: "2"
         }
       }
     ]
@@ -96,22 +96,27 @@ app.post('/issue-card', express.json(), async (req, res) => {
     }
 
     const verifyResult = await x402Server.verifyPayment(paymentPayload as any, matchingReq as any);
-    if (!verifyResult.isValid) {
+    const isSimulationFailure =
+      !verifyResult.isValid &&
+      verifyResult.invalidReason === 'invalid_exact_evm_transaction_simulation_failed';
+
+    if (!verifyResult.isValid && !isSimulationFailure) {
+      console.error('[x402 verify] invalid reason:', verifyResult.invalidReason);
       const errObj = { ...paymentRequiredObj, error: verifyResult.invalidReason };
       const encoded = Buffer.from(JSON.stringify(errObj)).toString('base64');
       return res.status(402).set('payment-required', encoded).json({ error: verifyResult.invalidReason });
+    }
+
+    if (isSimulationFailure) {
+      console.warn('[x402 verify] simulation failed; attempting direct settlement fallback');
     }
 
     console.log(`[Server] Payment signature verified! Settling USDC transaction on-chain to Merchant (${MERCHANT_CRYPTO_WALLET})...`);
     
     // Call Settle / Actually execute the viem transaction FIRST
     try {
-      if (process.env.USDC_ISSUER === 'native') {
-        console.log("[Server] Native payment was settled up-front by the Agent. Skipping EIP-3009 relay logic.");
-      } else {
-        await x402Server.settlePayment(paymentPayload as any, matchingReq as any);
-        console.log(`[Server] On-chain ERC20 USDC settlement confirmed!`);
-      }
+      await x402Server.settlePayment(paymentPayload as any, matchingReq as any);
+      console.log(`[Server] On-chain ERC20 USDC settlement confirmed!`);
     } catch(e) {
       console.error("Local settlement hook failed", e);
       return res.status(402).json({ error: "On-chain settlement failed. Your agent's USDC authorization was rejected or insufficient funds." });
@@ -193,58 +198,74 @@ app.post('/api/demo/run-agent', async (req, res) => {
   try {
     const { agentId, merchant, amount } = req.body;
     const amountNum = parseFloat(amount) || 5.00;
+    const amountPlusFee = amountNum * 1.01;
+    const baseUnits = BigInt(Math.round(amountPlusFee * 1_000_000));
+    const MERCHANT_CRYPTO_WALLET = process.env.merchant_public_key || '0xcc631cf60652f2849abA5d5A94534eB50506Ff0C';
+
+    const erc20TransferAbi = [
+      {
+        type: 'function',
+        name: 'transfer',
+        stateMutability: 'nonpayable',
+        inputs: [
+          { name: 'to', type: 'address' },
+          { name: 'value', type: 'uint256' },
+        ],
+        outputs: [{ name: '', type: 'bool' }],
+      },
+    ] as const;
     
-    // If agentId provided, use the Circle wallet mapped agent
+    // If agentId provided, use it for demo identity only; payment still comes from CLIENT_SECRET
     let fetchWithX402;
     if (agentId && demoAgents.has(agentId)) {
         console.log(`[Demo] Running fetch using MPC Agent ${agentId}...`);
-        const agent = demoAgents.get(agentId);
-        fetchWithX402 = agent.signedFetch;
-    } else {
-        // Fallback to default local client if no agentId
-        const CLIENT_SECRET = process.env.CLIENT_SECRET || '';
-        const formattedSecret = CLIENT_SECRET.startsWith('0x') ? CLIENT_SECRET : `0x${CLIENT_SECRET}`;
-        const account = require('viem/accounts').privateKeyToAccount(formattedSecret);
-        const signer = require('@x402/evm').toClientEvmSigner(account);
-        const client = new (require('@x402/core/client')).x402Client().register(
-          "eip155:5042002",
-          new (require('@x402/evm/exact/client')).ExactEvmScheme(signer)
-        );
-        fetchWithX402 = require('@x402/fetch').wrapFetchWithPayment(globalThis.fetch || fetch, client);
     }
 
-    
-    const MERCHANT_CRYPTO_WALLET = process.env.merchant_public_key || '0xcc631cf60652f2849abA5d5A94534eB50506Ff0C';
-    // Native token deduction via Agent wallet (Circle or Viem)
-    try {
-        const baseUnitsObject = (BigInt(Math.round((parseFloat(amount) * 1.01) * 1000000)) * BigInt("1000000000000")).toString(); // Shift from 6 to 18 decimals!
-        // Since we don't have Circle MPC natively integrated to handle random demo wallets in this test, we execute a viem transaction 
-        // to move the funds from the fallback client secret (which is meant to represent the agent wallet that was funded).
-        const fallbackSecret = process.env.CLIENT_SECRET || process.env.SERVER_SECRET_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
-        const formattedSecret = fallbackSecret.startsWith('0x') ? fallbackSecret : `0x${fallbackSecret}`;
-        const account = require('viem/accounts').privateKeyToAccount(formattedSecret);
-        const walletClient = require('viem').createWalletClient({ 
-             account, 
-             chain: { id: 5042002, name: 'Arc', nativeCurrency: { decimals: 6, name: 'USDC', symbol: 'USDC' }, rpcUrls: { default: { http: ['https://rpc.testnet.arc.network'] } } }, 
-             transport: require('viem').http() 
-        });
-        const publicClient = require('viem').createPublicClient({ 
-             chain: { id: 5042002, name: 'Arc', nativeCurrency: { decimals: 6, name: 'USDC', symbol: 'USDC' }, rpcUrls: { default: { http: ['https://rpc.testnet.arc.network'] } } }, 
-             transport: require('viem').http() 
-        });
-        
-        console.log(`[Agent] Initiating native deduction of ${baseUnitsObject} USDC directly to Merchant...`);
-        const hash = await walletClient.sendTransaction({
-             to: MERCHANT_CRYPTO_WALLET,
-             value: BigInt(baseUnitsObject)
-        });
-        console.log(`[Agent] Broadcasted native transfer - Hash: ${hash}`);
-        await publicClient.waitForTransactionReceipt({ hash });
-        console.log(`[Agent] Transfer receipt confirmed!`);
-    } catch(err) {
-        console.error("Agent balance insufficient for native deduction:", (err as Error).message);
-        return res.status(400).json({ error: "Insufficient Agent Funds or Native gas required. Please send more USDC to the Agent Address." });
+    const CLIENT_SECRET = process.env.CLIENT_SECRET || '';
+    if (!CLIENT_SECRET) {
+        return res.status(500).json({ error: 'Client secret not configured' });
     }
+    const formattedSecret = CLIENT_SECRET.startsWith('0x') ? CLIENT_SECRET : `0x${CLIENT_SECRET}`;
+    const account = require('viem/accounts').privateKeyToAccount(formattedSecret);
+    const signer = require('@x402/evm').toClientEvmSigner(account);
+    const client = new (require('@x402/core/client')).x402Client().register(
+      "eip155:5042002",
+      new (require('@x402/evm/exact/client')).ExactEvmScheme(signer)
+    );
+    fetchWithX402 = require('@x402/fetch').wrapFetchWithPayment(globalThis.fetch || fetch, client);
+
+    const { createPublicClient, createWalletClient, http } = require('viem');
+    const transferWalletClient = createWalletClient({
+      account,
+      chain: {
+        id: 5042002,
+        name: 'Arc Testnet',
+        network: 'arc-testnet',
+        nativeCurrency: { decimals: 18, name: 'USDC', symbol: 'USDC' },
+        rpcUrls: { default: { http: ['https://rpc.testnet.arc.network'] }, public: { http: ['https://rpc.testnet.arc.network'] } },
+      },
+      transport: http('https://rpc.testnet.arc.network'),
+    });
+    const transferPublicClient = createPublicClient({
+      chain: {
+        id: 5042002,
+        name: 'Arc Testnet',
+        network: 'arc-testnet',
+        nativeCurrency: { decimals: 18, name: 'USDC', symbol: 'USDC' },
+        rpcUrls: { default: { http: ['https://rpc.testnet.arc.network'] }, public: { http: ['https://rpc.testnet.arc.network'] } },
+      },
+      transport: http('https://rpc.testnet.arc.network'),
+    });
+
+    console.log(`[Demo] Transferring ${baseUnits.toString()} USDC from client wallet to merchant ${MERCHANT_CRYPTO_WALLET}...`);
+    const transferHash = await transferWalletClient.writeContract({
+      address: USDC_ISSUER as `0x${string}`,
+      abi: erc20TransferAbi,
+      functionName: 'transfer',
+      args: [MERCHANT_CRYPTO_WALLET as `0x${string}`, baseUnits],
+    });
+    await transferPublicClient.waitForTransactionReceipt({ hash: transferHash });
+    console.log(`[Demo] Client-funded USDC transfer confirmed: ${transferHash}`);
 
     const agentResponse = await fetchWithX402(`http://127.0.0.1:${process.env.PORT || 3000}/issue-card`, {
       method: 'POST',

@@ -31,6 +31,7 @@ async function registerAgent() {
     let walletId = `wlt-${Date.now()}`;
     let walletAddress: `0x${string}`;
     let customAccount: any;
+    let localPvtKey: `0x${string}` | undefined;
 
     if (process.env.CIRCLE_API_KEY && process.env.CIRCLE_ENTITY_SECRET) {
       console.log('[Agent] Creating developer-controlled wallet via Circle MPC...');
@@ -72,7 +73,7 @@ async function registerAgent() {
       });
     } else {
       console.log('[Agent] No Circle API Keys found. Falling back to local dynamically generated agent wallet for testnet execution...');
-      const localPvtKey = require('viem/accounts').generatePrivateKey();
+      localPvtKey = require('viem/accounts').generatePrivateKey();
       customAccount = privateKeyToAccount(localPvtKey);
       walletAddress = customAccount.address;
     }
@@ -126,6 +127,7 @@ async function registerAgent() {
     return {
       agentId: walletId,
       walletAddress: walletAddress,
+      privateKey: localPvtKey,
       signedFetch: fetchWithX402,
       x402Client: x402ClientInstance,
       circleWalletId: walletId,
