@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayPer Card Skill</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['DM Mono', 'monospace'],
+          },
+          colors: {
+            x402: '#155dfc',
+            x402subtle: '#F5F6FA'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-white text-black font-sans antialiased min-h-screen">
+  <nav class="border-b-2 border-black sticky top-0 bg-white z-50">
+    <div class="max-w-5xl mx-auto px-6 py-4 flex justify-between items-center">
+      <a href="/" class="font-bold text-2xl tracking-tighter">PayPer<span class="text-x402">Card</span></a>
+      <a href="/" class="border-2 border-black px-4 py-2 font-bold hover:bg-black hover:text-white transition-colors">Back Home</a>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto px-6 py-10 md:py-16">
+    <div class="mb-8">
+      <h1 class="text-4xl md:text-5xl font-bold tracking-tight">AI Skill Page</h1>
+      <p class="mt-4 text-gray-700 text-lg">This page is intended for AI agents and toolchains that need direct PayPer Card integration instructions.</p>
+    </div>
+
+    <section class="border-2 border-black p-6 bg-x402subtle mb-8">
+      <h2 class="text-2xl font-bold mb-4">Agent Links</h2>
+      <ul class="space-y-3 font-mono text-sm">
+        <li><a class="underline" href="https://payper-card.onrender.com/SKILL.md">https://payper-card.onrender.com/SKILL.md</a></li>
+        <li><a class="underline" href="https://payper-card.onrender.com/llms.txt">https://payper-card.onrender.com/llms.txt</a></li>
+        <li><a class="underline" href="https://payper-card.onrender.com/openapi.yaml">https://payper-card.onrender.com/openapi.yaml</a></li>
+        <li><a class="underline" href="https://payper-card.onrender.com/api/run-agent">https://payper-card.onrender.com/api/run-agent</a></li>
+      </ul>
+    </section>
+
+    <section class="border-2 border-black p-6">
+      <h2 class="text-2xl font-bold mb-4">Quick Skill Summary</h2>
+      <p class="mb-4 text-gray-700">Provision a virtual card by posting merchant and amount. The API handles x402 negotiation and returns card details.</p>
+      <pre class="bg-white border-2 border-black p-4 overflow-x-auto font-mono text-sm"><code>curl -X POST https://payper-card.onrender.com/api/run-agent \
+  -H "Content-Type: application/json" \
+  -d '{"merchant":"OpenAI","amount":20.00}'</code></pre>
+    </section>
+  </main>
+</body>
+</html>

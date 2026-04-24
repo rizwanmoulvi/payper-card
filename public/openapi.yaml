@@ -1,10 +1,10 @@
 openapi: 3.0.0
 info:
   title: PayPer Card API
-  description: API for provisioning virtual credit cards via x402 Protocol on Stellar.
+  description: API for provisioning virtual credit cards via x402 Protocol on Arc.
   version: 1.0.0
 servers:
-  - url: https://agc.rizzmo.site
+  - url: https://payper-card.onrender.com/
 paths:
   /api/run-agent:
     post:

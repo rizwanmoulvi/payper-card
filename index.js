@@ -22,6 +22,7 @@ app.use(express_1.default.json());
 // Serve the modern UI dashboard
 app.use(express_1.default.static(path_1.default.join(__dirname, 'public')));
 app.get('/demo', (req, res) => res.sendFile(path_1.default.join(__dirname, 'public', 'demo.html')));
+app.get('/skill', (req, res) => res.sendFile(path_1.default.join(__dirname, 'public', 'skill.html')));
 const PORT = process.env.PORT || 3000;
 const SERVER_PUBLIC_KEY = process.env.SERVER_PUBLIC_KEY || '0x217d848DE8b671aFEF2f0dCb9E72879fb109C483';
 // Arc testnet USDC ERC-20 interface for x402 permit-based settlement (6 decimals)
@@ -330,7 +331,7 @@ app.get('/api/cards/:token/transactions', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`\n=========================================`);
     console.log(`🚀 Card For Agent Dash running at: `);
-    console.log(`👉 https://agc.rizzmo.site`);
+    console.log(`👉 https://payper-card.onrender.com/`);
     console.log(`=========================================\n`);
     console.log(`[Server] x402 protected endpoint at POST /issue-card`);
 });

@@ -6,24 +6,24 @@ The system is powered by the **x402 Protocol**. **There is no KYC, no email sign
 
 ### Quick reference
 
-Run standard HTTP loops (e.g. `curl`, `fetch`, Python `requests`) talking to `https://agc.rizzmo.site`. The most common operations:
+Run standard HTTP loops (e.g. `curl`, `fetch`, Python `requests`) talking to `https://payper-card.onrender.com/`. The most common operations:
 
 ```bash
 # 1. Provision a card (Automatically negotiates the x402 USDC payment)
-curl -X POST https://agc.rizzmo.site/api/run-agent -H "Content-Type: application/json" \
+curl -X POST https://payper-card.onrender.com/api/run-agent -H "Content-Type: application/json" \
   -d '{"merchant": "<Merchant Name>", "amount": <Dollar Amount>}'
 
 # 2. List all active provisioned cards
-curl https://agc.rizzmo.site/api/cards
+curl https://payper-card.onrender.com/api/cards
 
 # 3. Reveal full card details (PAN, CVV, Expiry) for a specific card
-curl https://agc.rizzmo.site/api/cards/<token>
+curl https://payper-card.onrender.com/api/cards/<token>
 
 # 4. Check transaction history (Authorizations, declines, settles)
-curl https://agc.rizzmo.site/api/cards/<token>/transactions
+curl https://payper-card.onrender.com/api/cards/<token>/transactions
 
 # 5. Pause or close a card to secure unused funds
-curl -X PATCH https://agc.rizzmo.site/api/cards/<token> -H "Content-Type: application/json" \
+curl -X PATCH https://payper-card.onrender.com/api/cards/<token> -H "Content-Type: application/json" \
   -d '{"state": "PAUSED"}' 
 ```
 
