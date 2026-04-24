@@ -63,7 +63,7 @@ server.setRequestHandler(types_js_1.CallToolRequestSchema, async (request) => {
                 const args = request.params.arguments;
                 const merchant = args?.merchant;
                 const amount = args?.amount;
-                const res = await (0, node_fetch_1.default)(`${API_BASE}/run-agent`, {
+                const res = await (0, node_fetch_1.default)(`${API_BASE}/issue-card`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ merchant, amount }),

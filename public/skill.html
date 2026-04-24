@@ -43,14 +43,14 @@
         <li><a class="underline" href="https://payper-card.onrender.com/SKILL.md">https://payper-card.onrender.com/SKILL.md</a></li>
         <li><a class="underline" href="https://payper-card.onrender.com/llms.txt">https://payper-card.onrender.com/llms.txt</a></li>
         <li><a class="underline" href="https://payper-card.onrender.com/openapi.yaml">https://payper-card.onrender.com/openapi.yaml</a></li>
-        <li><a class="underline" href="https://payper-card.onrender.com/api/run-agent">https://payper-card.onrender.com/api/run-agent</a></li>
+        <li><a class="underline" href="https://payper-card.onrender.com/api/issue-card">https://payper-card.onrender.com/api/issue-card</a></li>
       </ul>
     </section>
 
     <section class="border-2 border-black p-6">
       <h2 class="text-2xl font-bold mb-4">Quick Skill Summary</h2>
       <p class="mb-4 text-gray-700">Provision a virtual card by posting merchant and amount. The API handles x402 negotiation and returns card details.</p>
-      <pre class="bg-white border-2 border-black p-4 overflow-x-auto font-mono text-sm"><code>curl -X POST https://payper-card.onrender.com/api/run-agent \
+        <pre class="bg-white border-2 border-black p-4 overflow-x-auto font-mono text-sm"><code>curl -X POST https://payper-card.onrender.com/api/issue-card \
   -H "Content-Type: application/json" \
   -d '{"merchant":"OpenAI","amount":20.00}'</code></pre>
     </section>

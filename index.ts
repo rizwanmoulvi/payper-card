@@ -195,7 +195,7 @@ app.post('/api/demo/fund-agent', async (req, res) => {
   }
 });
 
-app.post('/api/demo/run-agent', async (req, res) => {
+app.post('/api/demo/issue-card', async (req, res) => {
   try {
     const { agentId, merchant, amount } = req.body;
     const amountNum = parseFloat(amount) || 5.00;
@@ -282,7 +282,7 @@ app.post('/api/demo/run-agent', async (req, res) => {
   }
 });
 
-app.post('/api/run-agent', async (req, res) => {
+app.post('/api/issue-card', async (req, res) => {
   try {
     const CLIENT_SECRET = process.env.CLIENT_SECRET || '';
     if (!CLIENT_SECRET) {

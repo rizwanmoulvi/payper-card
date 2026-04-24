@@ -6,7 +6,7 @@ info:
 servers:
   - url: https://payper-card.onrender.com/
 paths:
-  /api/run-agent:
+  /api/issue-card:
     post:
       summary: Provision a card
       description: Automatically negotiates the x402 USDC payment and allocates a Lithic virtual card.
