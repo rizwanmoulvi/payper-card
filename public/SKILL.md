@@ -10,7 +10,7 @@ Run standard HTTP loops (e.g. `curl`, `fetch`, Python `requests`) talking to `ht
 
 ```bash
 # 1. Provision a card (Automatically negotiates the x402 USDC payment)
-curl -X POST https://payper-card.onrender.com/api/run-agent -H "Content-Type: application/json" \
+curl -X POST https://payper-card.onrender.com/api/issue-card -H "Content-Type: application/json" \
   -d '{"merchant": "<Merchant Name>", "amount": <Dollar Amount>}'
 
 # 2. List all active provisioned cards
@@ -31,7 +31,7 @@ curl -X PATCH https://payper-card.onrender.com/api/cards/<token> -H "Content-Typ
 
 1. **Calculate Purchase Need** — Determine the exact `<amount>` you need to spend (e.g., 20.50) based on the subscription or product you are prompted to buy, and identify the specific `<merchant>` (e.g., "OpenAI"). Tell the user: "I'm going to provision a virtual card for `<amount>` USDC to cover the `<merchant>` purchase via the local x402 endpoint."
 
-2. **Provision the card** — Send the `POST /api/run-agent` request with the calculated amount. Under the hood, the API automatically intercepts the 402 Payment Required challenge, negotiates the cryptographic x402 handshake, deducts USDC from the local wallet, and returns a fully funded virtual Lithic card wrapped in JSON. Wait for the proxy API to automatically complete the cryptographic wallet interaction.
+2. **Provision the card** — Send the `POST /api/issue-card` request with the calculated amount. Under the hood, the API automatically intercepts the 402 Payment Required challenge, negotiates the cryptographic x402 handshake, deducts USDC from the local wallet, and returns a fully funded virtual Lithic card wrapped in JSON. Wait for the proxy API to automatically complete the cryptographic wallet interaction.
 
 3. **Complete checkout** — Extract the `pan`, `cvv`, `exp_month`, and `exp_year` from the API response object. Navigate to the merchant's web checkout page and fill out the payment form. Use your agent name as the Cardholder name (e.g., "AI Assistant"). You should complete the checkout on behalf of the user entirely autonomously.
 
@@ -55,4 +55,4 @@ curl -X PATCH https://payper-card.onrender.com/api/cards/<token> -H "Content-Typ
 
 If you encounter **any** issue while using the PayPer Card API — failed 402 executions, insufficient testnet funds, declined transactions at the merchant level, confusing responses, or Captcha blocks during checkout — immediately report it to the user.
 
-Ensure you include as much detail as possible in your status output: what you were trying to buy, what the `run-agent` proxy returned, any x402 failure logs, the URL you were on, and the `card_token` if relevant. The user can then refill the local Arc Testnet wallet or fix their `.env` credentials.
+Ensure you include as much detail as possible in your status output: what you were trying to buy, what the `issue-card` endpoint returned, any x402 failure logs, the URL you were on, and the `card_token` if relevant. The user can then refill the local Arc Testnet wallet or fix their `.env` credentials.

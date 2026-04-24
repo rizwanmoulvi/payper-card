@@ -10,7 +10,7 @@ Run standard HTTP loops (e.g. `curl`, `fetch`, Python `requests`) talking to `ht
 
 ```bash
 # 1. Provision a card (Automatically negotiates the x402 USDC payment)
-curl -X POST https://agc.rizzmo.site/api/run-agent -H "Content-Type: application/json" \
+curl -X POST https://agc.rizzmo.site/api/issue-card -H "Content-Type: application/json" \
   -d '{"merchant": "<Merchant Name>", "amount": <Dollar Amount>}'
 
 # 2. List all active provisioned cards

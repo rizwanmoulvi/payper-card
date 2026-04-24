@@ -8,10 +8,10 @@ The system is powered by the **x402 Protocol**. **There is no KYC, no email sign
 
 Base URL: `https://payper-card.onrender.com/`
 
-- `POST /api/run-agent` -> Provide `{"merchant": "Name", "amount": 10.00}` to get a card (auto-negotiates x402).
+- `POST /api/issue-card` -> Provide `{"merchant": "Name", "amount": 10.00}` to get a card (auto-negotiates x402).
 - `GET /api/cards` -> List active cards.
 - `GET /api/cards/<token>` -> Get PAN, CVV, Expiry for a token.
 - `GET /api/cards/<token>/transactions` -> View recent transactions for a card.
 - `PATCH /api/cards/<token>` -> Pass `{"state": "PAUSED"}` or `"CLOSED"` to freeze funds.
 
-If an endpoint responds with a `402 Payment Required` carrying a `PAYMENT-REQUIRED` payload header, the system natively requires a cryptographic payment. Using `/api/run-agent` handles this loop seamlessly.
+If an endpoint responds with a `402 Payment Required` carrying a `PAYMENT-REQUIRED` payload header, the system natively requires a cryptographic payment. Using `/api/issue-card` handles this loop seamlessly.

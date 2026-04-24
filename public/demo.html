@@ -230,11 +230,11 @@
             const merchant = document.getElementById('merchantInput').value;
             const amount = document.getElementById('amountInput').value;
 
-            logTerminal(`POST /api/demo/run-agent (Merchant: ${merchant}, Amount: $${amount})`, "text-white");
+            logTerminal(`POST /api/demo/issue-card (Merchant: ${merchant}, Amount: $${amount})`, "text-white");
             logTerminal(`Agent is intercepting fetch, encountering HTTP 402, and signing Typed Data via Circle...`, "text-yellow-400");
             
             try {
-                const res = await fetch('/api/demo/run-agent', { 
+                const res = await fetch('/api/demo/issue-card', { 
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
