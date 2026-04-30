@@ -1,0 +1,93 @@
+{
+  "name": "Provision Visa Card via x402",
+  "description": "Agent-driven workflow that initiates USDC payment on Base Sepolia and provisions a Lithic Visa card.",
+  "trigger": {
+    "type": "webhook",
+    "name": "Agent Provision Request",
+    "schema": {
+      "amount": "string",
+      "recipientName": "string",
+      "idempotencyKey": "string"
+    }
+  },
+  "nodes": [
+    {
+      "id": "get-x402-challenge",
+      "type": "http",
+      "name": "Check Pricing/Invoice",
+      "config": {
+        "method": "GET",
+        "url": "https://api.lithic.com/v1/cards/x402-configuration"
+      }
+    },
+    {
+      "id": "pay-usdc",
+      "type": "web3",
+      "name": "Send USDC via Turnkey",
+      "dependsOn": ["get-x402-challenge"],
+      "config": {
+        "network": "eip155:84532",
+        "action": "transferERC20",
+        "tokenAddress": "{{env.USDC_SEP_ADDRESS}}",
+        "to": "{{env.X402_PAY_TO_ADDRESS}}",
+        "amount": "{{trigger.amount}}"
+      }
+    },
+    {
+      "id": "submit-to-facilitator",
+      "type": "http",
+      "name": "Report to x402.org Facilitator",
+      "dependsOn": ["pay-usdc"],
+      "config": {
+        "method": "POST",
+        "url": "{{env.X402_FACILITATOR_URL}}",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "network": "eip155:84532",
+          "scheme": "exact",
+          "txHash": "{{pay-usdc.transactionHash}}"
+        }
+      }
+    },
+    {
+      "id": "provision-card",
+      "type": "http",
+      "name": "Call Lithic API to issue Card",
+      "dependsOn": ["submit-to-facilitator"],
+      "config": {
+        "method": "POST",
+        "url": "https://api.lithic.com/v1/cards",
+        "headers": {
+          "Authorization": "Bearer {{env.LITHIC_API_KEY}}",
+          "Content-Type": "application/json",
+          "Idempotency-Key": "{{trigger.idempotencyKey}}"
+        },
+        "body": {
+          "type": "VIRTUAL",
+          "spend_limit": "{{trigger.amount}}",
+          "memo": "Payment TX: {{pay-usdc.transactionHash}}"
+        }
+      }
+    },
+    {
+      "id": "notify-agent",
+      "type": "http",
+      "name": "Return Card Details to Agent Webhook",
+      "dependsOn": ["provision-card"],
+      "config": {
+        "method": "POST",
+        "url": "{{env.AGENT_CALLBACK_URL}}",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "status": "success",
+          "txHash": "{{pay-usdc.transactionHash}}",
+          "cardDetails": "{{provision-card.response}}"
+        }
+      }
+    }
+  ]
+}
