@@ -22,13 +22,19 @@ We leverage the `@x402/express` middleware to protect the card-creation API and 
 2. Setup environment variables:
    ```bash
    cp .env.example .env
-   # Ensure your .env has FUNDED_WALLET_PRIVATE_KEY and X402_PAY_TO_ADDRESS
+   # Fill in the required API keys and wallet values for your environment
    ```
-3. Start the protected API server:
+3. Start the server from the repo root:
    ```bash
-   node src/server.js
+   npm start
    ```
-4. In a new terminal, run the AI Agent to request the card automatically:
+4. Open the UI in your browser:
+   - Landing page: http://localhost:3001/
+   - Demo page: http://localhost:3001/demo
+5. Test the visual demo:
+   - Click the demo page button to simulate the funded client account flow.
+   - Change the merchant and amount fields, then run the provisioning flow.
+6. Optional: run the agent CLI against the x402 flow:
    ```bash
-   node src/agent.js
+   npm run agent
    ```

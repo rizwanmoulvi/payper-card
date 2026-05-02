@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayPer Card - Visual Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['DM Mono', 'monospace'],
+                    },
+                    colors: {
+                        x402: '#155dfc',
+                        x402green: '#0a7739',
+                        x402orange: '#ba4705',
+                        x402subtle: '#F5F6FA',
+                        x402code: '#F1F1F1'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .brutal-shadow {
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+        }
+        .brutal-shadow:hover:not(:disabled) {
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+            transform: translate(2px, 2px);
+        }
+        .brutal-shadow:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+        }
+        .brutal-shadow-sm {
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+        }
+        
+        .loader {
+            border: 2px solid #000;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-white text-black font-sans antialiased selection:bg-x402 selection:text-white min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="border-b-2 border-black sticky top-0 bg-white z-50">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="/" class="font-bold text-2xl tracking-tighter flex items-center hover:text-x402 transition-colors">
+                    PayPer<span class="text-x402">Card</span>
+                </a>
+            </div>
+                <div class="flex items-center gap-6 font-bold text-sm">
+                <div class="bg-x402 text-white px-3 py-1 font-mono text-xs brutal-shadow-sm">VISUAL DEMO</div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow">
+        <div class="max-w-6xl mx-auto px-6 py-12 md:py-20 grid grid-cols-1 lg:grid-cols-2 gap-12">
+            
+            <!-- Left Column: Controls -->
+            <div class="space-y-10">
+                <div>
+                    <h1 class="text-4xl md:text-5xl font-bold tracking-tight mb-4">Provision a Card Live</h1>
+                    <p class="text-gray-800 leading-relaxed font-medium">
+                        This demo follows the same x402 provisioning path as the product. The user step is simulated with a provided funded client account, so you can focus on the visible purchase flow.
+                    </p>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Step 1 -->
+                    <div class="border-2 border-black p-6 bg-white brutal-shadow">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="bg-x402 text-white font-black w-8 h-8 flex items-center justify-center border-2 border-black">1</div>
+                            <h2 class="font-bold text-xl">Provided Client Account</h2>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4">Wallet creation and funding are intentionally skipped in the demo. The account is already available for the simulated user action.</p>
+                        <button id="btnCreate" disabled class="w-full bg-black text-white font-bold py-3 px-4 border-2 border-black brutal-shadow transition-all flex justify-center items-center gap-2">
+                            <span>Demo Account Ready</span>
+                        </button>
+                        <div id="resCreate" class="mt-4 p-3 bg-x402code border-2 border-black font-mono text-xs break-all text-black">
+                            <span class="text-x402green font-bold">✓ Ready</span><br>
+                            The demo will automatically use the provided client account for payment.
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="border-2 border-black p-6 bg-white brutal-shadow opacity-50 transition-opacity" id="step2Box">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="bg-x402orange text-white font-black w-8 h-8 flex items-center justify-center border-2 border-black">2</div>
+                            <h2 class="font-bold text-xl">Agent Negotiates Purchase</h2>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-4">The agent triggers an HTTP fetch, signs the 402 challenge, and asks the server to provision a Lithic virtual card.</p>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-xs font-bold mb-1 uppercase tracking-wider text-gray-500">Merchant</label>
+                                <input type="text" id="merchantInput" value="Hetzner Cloud" class="w-full border-2 border-black p-2 bg-white font-mono text-sm focus:outline-none focus:ring-0 focus:bg-x402code">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold mb-1 uppercase tracking-wider text-gray-500">Amount (USD)</label>
+                                <input type="number" id="amountInput" value="15.00" class="w-full border-2 border-black p-2 bg-white font-mono text-sm focus:outline-none focus:ring-0 focus:bg-x402code">
+                            </div>
+                        </div>
+                        
+                        <button id="btnRun" class="w-full bg-x402 text-white font-bold py-3 px-4 border-2 border-black brutal-shadow transition-all flex justify-center items-center gap-2">
+                            <span>Run Provisioning Flow</span>
+                        </button>
+                        <div id="resRun" class="mt-4 hidden p-3 bg-x402code border-2 border-black font-mono text-xs break-all text-black"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Terminal Logs -->
+            <div class="bg-black text-white border-2 border-black font-mono text-sm flex flex-col h-[600px] lg:h-auto brutal-shadow sticky top-24">
+                <div class="flex items-center gap-2 border-b-2 border-white p-3 bg-x402code text-black">
+                    <div class="w-3 h-3 bg-red-500 border border-black rounded-full"></div>
+                    <div class="w-3 h-3 bg-yellow-500 border border-black rounded-full"></div>
+                    <div class="w-3 h-3 bg-green-500 border border-black rounded-full"></div>
+                    <div class="ml-2 font-bold text-xs uppercase tracking-widest">provisioning_logs.sh</div>
+                </div>
+                
+                <div id="terminalBody" class="p-4 flex-grow overflow-y-auto space-y-2 whitespace-pre-wrap text-green-400">
+                    <div><span class="text-white">agentpay $</span> Waiting for a user action...</div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-white text-black py-8 border-t-2 border-black mt-auto">
+        <div class="max-w-6xl mx-auto px-6 text-center font-mono text-sm font-bold">
+            PayPerCard 2026. ARC Testnet.
+        </div>
+    </footer>
+
+    <script>
+        const btnCreate = document.getElementById('btnCreate');
+        const btnRun = document.getElementById('btnRun');
+        
+        const resCreate = document.getElementById('resCreate');
+        const resRun = document.getElementById('resRun');
+
+        const terminalBody = document.getElementById('terminalBody');
+        
+        let currentAgentId = 'provided-client-account';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('step2Box').classList.remove('opacity-50');
+            btnRun.disabled = false;
+            logTerminal('Demo loaded: using the provided client account for settlement.', 'text-green-400');
+        });
+
+        function logTerminal(msg, color = "text-gray-300") {
+            const el = document.createElement('div');
+            // Adding a timestamp
+            const time = new Date().toISOString().split('T')[1].slice(0,8);
+            el.innerHTML = `<span class="text-gray-500">[${time}]</span> <span class="${color}">${msg}</span>`;
+            terminalBody.appendChild(el);
+            terminalBody.scrollTop = terminalBody.scrollHeight;
+        }
+
+        function setLoading(btn, isLoading, originalText) {
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = `<div class="loader"></div> <span>Processing...</span>`;
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = `<span>${originalText}</span>`;
+            }
+        }
+
+        btnCreate.addEventListener('click', () => {
+            logTerminal('Wallet creation skipped in demo mode. Using the provided funded client account.', 'text-green-400');
+        });
+
+        // 2. Run Agent (x402)
+        btnRun.addEventListener('click', async () => {
+            setLoading(btnRun, true, "Execute x402 Fetch");
+            const merchant = document.getElementById('merchantInput').value;
+            const amount = document.getElementById('amountInput').value;
+
+            logTerminal(`POST /api/demo/run-agent (Merchant: ${merchant}, Amount: $${amount})`, "text-white");
+            logTerminal(`Agent is intercepting fetch, encountering HTTP 402, and signing the settlement request...`, "text-yellow-400");
+            
+            try {
+                const res = await fetch('/api/demo/run-agent', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        agentId: currentAgentId,
+                        merchant: merchant,
+                        amount: amount
+                    })
+                });
+                const data = await res.json();
+                
+                if (res.ok && data.card) {
+                    resRun.classList.remove('hidden');
+                    resRun.innerHTML = `<span class="text-x402 font-bold uppercase tracking-widest text-[10px]">PAN REVEALED</span><br><div class="text-base font-bold bg-white text-black border border-black p-1 inline-block mt-1">${data.card.pan}</div><br>CVV: ${data.card.cvv} | EXP: ${data.card.exp_month}/${data.card.exp_year}`;
+                    
+                    logTerminal(`Server validated the payment via the facilitator.`, "text-green-400");
+                    logTerminal(`HTTP 200 OK. Virtual card provisioning complete.`, "text-green-400");
+                    logTerminal(`Card details returned to the demo view.`, "text-blue-200");
+                    
+                    btnRun.innerHTML = "Provisioned ✓";
+                } else {
+                    const errPayload = JSON.stringify(data);
+                    logTerminal(`Execution Failed: ${errPayload}`, "text-red-500");
+                    setLoading(btnRun, false, "Execute x402 Fetch");
+                }
+            } catch(e) {
+                logTerminal(`Network Error: ${e.message}`, "text-red-500");
+                setLoading(btnRun, false, "Execute x402 Fetch");
+            }
+        });
+
+    </script>
+</body>
+</html>
