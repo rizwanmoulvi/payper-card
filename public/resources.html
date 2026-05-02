@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayPer Card - Resources</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['DM Mono', 'monospace'],
+                    },
+                    colors: {
+                        x402: '#155dfc',
+                        x402green: '#0a7739',
+                        x402orange: '#ba4705',
+                        x402subtle: '#F5F6FA',
+                        x402code: '#F1F1F1'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .brutal-shadow {
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+        }
+        .brutal-shadow:hover {
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+            transform: translate(2px, 2px);
+        }
+        .brutal-shadow-sm {
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+        }
+    </style>
+</head>
+<body class="bg-white text-black font-sans antialiased selection:bg-x402 selection:text-white min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="border-b-2 border-black sticky top-0 bg-white z-50">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="/" class="font-bold text-2xl tracking-tighter flex items-center hover:text-x402 transition-colors">
+                    PayPer<span class="text-x402">Card</span>
+                </a>
+            </div>
+            <div class="flex items-center gap-6 font-medium text-sm">
+                <a href="/" class="hover:text-x402 transition-colors hidden md:block">Home</a>
+                <a href="/demo" class="bg-black text-white px-5 py-2.5 font-bold border-2 border-black hover:bg-white hover:text-black transition-colors brutal-shadow">View Demo</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow">
+        <div class="max-w-6xl mx-auto px-6 py-12 md:py-20">
+            
+            <div class="mb-12">
+                <h1 class="text-5xl md:text-6xl font-bold tracking-tight mb-4">Resources & Documentation</h1>
+                <p class="text-lg text-gray-800 leading-relaxed max-w-2xl">
+                    Everything you need to understand and integrate PayPer Card into your workflow.
+                </p>
+            </div>
+
+            <!-- Main Resources Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                
+                <!-- SKILL.md Card -->
+                <div class="border-2 border-black p-8 bg-white brutal-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-2">System Instructions (SKILL.md)</h2>
+                            <p class="text-sm text-gray-600 font-mono">Agent integration guide</p>
+                        </div>
+                        <div class="text-3xl">🤖</div>
+                    </div>
+                    <p class="text-gray-800 leading-relaxed mb-6">
+                        Complete reference for AI agents to provision virtual cards, manage transactions, and handle the x402 payment protocol. Includes code examples and error handling.
+                    </p>
+                    <a href="/SKILL.md" target="_blank" class="bg-x402 text-white font-bold py-3 px-6 border-2 border-black inline-block brutal-shadow transition-all">Read SKILL.md</a>
+                </div>
+
+                <!-- OpenAPI Spec Card -->
+                <div class="border-2 border-black p-8 bg-white brutal-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-2">OpenAPI Specification</h2>
+                            <p class="text-sm text-gray-600 font-mono">openapi.yaml</p>
+                        </div>
+                        <div class="text-3xl">📋</div>
+                    </div>
+                    <p class="text-gray-800 leading-relaxed mb-6">
+                        Machine-readable API schema for the PayPer Card endpoints. Use this with tools like Swagger UI or Redoc to generate interactive API documentation.
+                    </p>
+                    <a href="/openapi.yaml" target="_blank" class="bg-x402orange text-white font-bold py-3 px-6 border-2 border-black inline-block brutal-shadow transition-all">View OpenAPI</a>
+                </div>
+
+                <!-- LLM Instructions Card -->
+                <div class="border-2 border-black p-8 bg-white brutal-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-2">LLM Facing API Docs</h2>
+                            <p class="text-sm text-gray-600 font-mono">llms.txt</p>
+                        </div>
+                        <div class="text-3xl">🧠</div>
+                    </div>
+                    <p class="text-gray-800 leading-relaxed mb-6">
+                        Condensed API reference optimized for language models. Includes endpoint summaries, request/response formats, and usage patterns for AI implementations.
+                    </p>
+                    <a href="/llms.txt" target="_blank" class="bg-x402green text-white font-bold py-3 px-6 border-2 border-black inline-block brutal-shadow transition-all">View llms.txt</a>
+                </div>
+
+                <!-- AI Plugin Config Card -->
+                <div class="border-2 border-black p-8 bg-white brutal-shadow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-2">AI Plugin Manifest</h2>
+                            <p class="text-sm text-gray-600 font-mono">.well-known/ai-plugin.json</p>
+                        </div>
+                        <div class="text-3xl">🔌</div>
+                    </div>
+                    <p class="text-gray-800 leading-relaxed mb-6">
+                        Plugin metadata file for AI agent frameworks. Defines capabilities, authentication, and plugin branding for ChatGPT and similar integrations.
+                    </p>
+                    <a href="/.well-known/ai-plugin.json" target="_blank" class="bg-black text-white font-bold py-3 px-6 border-2 border-black inline-block brutal-shadow transition-all">View Plugin Config</a>
+                </div>
+
+            </div>
+
+            <!-- Public Directory Structure -->
+            <section class="border-2 border-black p-8 bg-x402subtle">
+                <h2 class="text-3xl font-bold mb-6">Public Directory Contents</h2>
+                
+                <div class="font-mono text-sm space-y-3">
+                    <div class="flex gap-4">
+                        <span class="text-x402 font-bold">public/</span>
+                    </div>
+                    
+                    <div class="ml-6 space-y-3">
+                        <div class="flex gap-4">
+                            <span class="text-gray-500">├─</span>
+                            <span><span class="font-bold">index.html</span> — Landing page with hero section and agent overview</span>
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <span class="text-gray-500">├─</span>
+                            <span><span class="font-bold">demo.html</span> — Interactive visual demo for card provisioning (skips wallet creation)</span>
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <span class="text-gray-500">├─</span>
+                            <span><span class="font-bold">resources.html</span> — This page, linking to all documentation and resources</span>
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <span class="text-gray-500">├─</span>
+                            <span><span class="font-bold">SKILL.md</span> — Complete system instructions for AI agents integrating PayPer Card</span>
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <span class="text-gray-500">├─</span>
+                            <span><span class="font-bold">openapi.yaml</span> — OpenAPI 3.0 specification for all PayPer Card endpoints</span>
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <span class="text-gray-500">├─</span>
+                            <span><span class="font-bold">llms.txt</span> — LLM-optimized API documentation for language models</span>
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <span class="text-gray-500">├─</span>
+                            <span><span class="font-bold">.well-known/</span> — Standard well-known directory</span>
+                        </div>
+                        
+                        <div class="ml-6 flex gap-4">
+                            <span class="text-gray-500">│</span>
+                            <span class="text-gray-500">└─</span>
+                            <span><span class="font-bold">ai-plugin.json</span> — Plugin manifest for AI agent frameworks</span>
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <span class="text-gray-500">└─</span>
+                            <span><span class="font-bold">assets/</span> — Brand and partner logos</span>
+                        </div>
+                        
+                        <div class="ml-6 flex gap-4">
+                            <span class="text-gray-500">├─</span>
+                            <span><span class="text-gray-600">Claude-logo.svg</span></span>
+                        </div>
+                        
+                        <div class="ml-6 flex gap-4">
+                            <span class="text-gray-500">├─</span>
+                            <span><span class="text-gray-600">GitHub-copilot-logo.svg</span></span>
+                        </div>
+                        
+                        <div class="ml-6 flex gap-4">
+                            <span class="text-gray-500">├─</span>
+                            <span><span class="text-gray-600">Cursor-logo.svg</span></span>
+                        </div>
+                        
+                        <div class="ml-6 flex gap-4">
+                            <span class="text-gray-500">├─</span>
+                            <span><span class="text-gray-600">OpenClaw-logo.svg</span></span>
+                        </div>
+                        
+                        <div class="ml-6 flex gap-4">
+                            <span class="text-gray-500">├─</span>
+                            <span><span class="text-gray-600">Devin-logo.svg</span></span>
+                        </div>
+                        
+                        <div class="ml-6 flex gap-4">
+                            <span class="text-gray-500">└─</span>
+                            <span><span class="text-gray-600">logo.png</span></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Links Section -->
+            <section class="mt-16 border-2 border-black p-8 bg-white brutal-shadow">
+                <h2 class="text-3xl font-bold mb-6">Quick Links</h2>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <a href="/demo" class="border-2 border-black p-4 font-bold hover:bg-black hover:text-white transition-colors">
+                        → Open Demo
+                    </a>
+                    <a href="https://docs.x402.org" target="_blank" class="border-2 border-black p-4 font-bold hover:bg-black hover:text-white transition-colors">
+                        → x402 Protocol Docs
+                    </a>
+                    <a href="https://github.com/rizwanmoulvi/payper-card" target="_blank" class="border-2 border-black p-4 font-bold hover:bg-black hover:text-white transition-colors">
+                        → GitHub Repository
+                    </a>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="bg-white text-black py-8 border-t-2 border-black mt-auto">
+        <div class="max-w-6xl mx-auto px-6 text-center font-mono text-sm font-bold">
+            PayPerCard 2026. Resources & Documentation.
+        </div>
+    </footer>
+
+</body>
+</html>

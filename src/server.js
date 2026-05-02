@@ -25,6 +25,10 @@ app.get('/demo', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/demo.html'));
 });
 
+app.get('/resources', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/resources.html'));
+});
+
 // 1. Initialize x402 Server & Facilitator Client
 const facilitatorClient = new HTTPFacilitatorClient({
   url: process.env.X402_FACILITATOR_URL || "https://x402.org/facilitator",
